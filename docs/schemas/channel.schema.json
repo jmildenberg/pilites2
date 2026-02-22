@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/channel.schema.json",
+  "title": "Channel",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "gpioPin", "ledCount", "ledType", "colorOrder"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "gpioPin": { "type": "integer", "enum": [12, 18, 13, 19] },
+    "ledCount": { "type": "integer", "minimum": 1 },
+    "ledType": { "type": "string", "enum": ["ws281x"] },
+    "colorOrder": { "type": "string", "enum": ["RGB", "GRB", "RGBW", "GRBW"] }
+  }
+}

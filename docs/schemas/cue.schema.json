@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/cue.schema.json",
+  "title": "Cue",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "effectsByRegion"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "effectsByRegion": {
+      "type": "object",
+      "additionalProperties": { "$ref": "effect.schema.json" }
+    }
+  }
+}

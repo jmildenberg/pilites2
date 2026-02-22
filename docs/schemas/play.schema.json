@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/play.schema.json",
+  "title": "Play",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "name", "regions", "cues"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "regions": {
+      "type": "array",
+      "items": { "$ref": "region.schema.json" }
+    },
+    "cues": {
+      "type": "array",
+      "items": { "$ref": "cue.schema.json" }
+    }
+  }
+}

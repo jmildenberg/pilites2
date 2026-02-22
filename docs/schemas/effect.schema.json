@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/effect.schema.json",
+  "title": "Effect",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "type", "params"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "type": { "type": "string", "minLength": 1 },
+    "params": { "type": "object", "additionalProperties": true }
+  }
+}
