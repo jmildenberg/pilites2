@@ -29,6 +29,15 @@ class Broadcaster:
         for ws in dead:
             self._connections.discard(ws)
 
+    async def close_all(self) -> None:
+        """Close all connected WebSockets and clear the connection set."""
+        for ws in list(self._connections):
+            try:
+                await ws.close()
+            except Exception:
+                pass
+        self._connections.clear()
+
     @property
     def count(self) -> int:
         return len(self._connections)

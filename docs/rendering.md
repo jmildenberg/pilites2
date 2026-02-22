@@ -28,7 +28,6 @@ def render(
     params: dict,
     elapsed_sec: float,
     pixel_count: int,
-    rng: random.Random,
 ) -> list[tuple[int, int, int]]:
     ...
 ```
@@ -36,10 +35,9 @@ def render(
 - `params`: The effect's parameter dict from the play definition.
 - `elapsed_sec`: Seconds since the cue started, adjusted for `offsetSec` (see below).
 - `pixel_count`: Number of pixels in the region.
-- `rng`: A seeded `random.Random` instance for effects that require randomness.
 - Returns a list of `(r, g, b)` tuples, one per pixel, each value 0–255.
 
-Effects must be deterministic given the same inputs. Stateful effects (lightning, twinkle) use the provided `rng` rather than global random state.
+Effects must be deterministic given the same inputs. Effects that appear random (lightning, twinkle) achieve determinism by seeding a local `random.Random` from a hash of the time bucket and pixel index rather than using global random state. This means the same elapsed time always produces the same output.
 
 ## offsetSec
 
@@ -50,10 +48,6 @@ adjusted_elapsed = max(0.0, elapsed_sec - offset_sec)
 ```
 
 Before the offset has elapsed, `adjusted_elapsed` is `0.0` and the effect renders its initial frame.
-
-## Random Number Generation
-
-For effects that use randomness (lightning, twinkle), the engine creates a `random.Random` instance seeded from the effect's `id`. This ensures the same effect renders the same random sequence each time a cue starts, which is important for preview repeatability.
 
 ## Color Format
 
@@ -76,7 +70,6 @@ Preview works the same as live mode. The frame loop runs from the first cue and 
 In live mode the frame loop runs the current cue indefinitely. The cue does not advance automatically. The operator calls `POST /live/next` to move to the next cue, at which point:
 
 - The frame loop resets `elapsed_sec` to `0`.
-- Any per-cue RNG instances are re-seeded.
 - A `status` WebSocket message is sent.
 
 When the last cue is reached, `/live/next` has no effect (the play does not loop).

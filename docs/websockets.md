@@ -53,6 +53,7 @@ Sent when the live session state changes — on start, on cue advance, on blacko
 ```json
 {
   "type": "status",
+  "playId": "play-1",
   "cueId": "cue-1",
   "cueName": "Intro",
   "cueIndex": 0,

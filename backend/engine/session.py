@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import random
 import time
 
-from models import Channel, Effect, Play
+from models import Channel, Play
 from engine.effects import render_effect
 from engine.effects.utils import rgb_to_hex
 
@@ -17,7 +16,6 @@ def _build_frame(
     channels: list[Channel],
     cue_index: int,
     elapsed_sec: float,
-    rngs: dict[str, random.Random],
 ) -> dict:
     # Initialize all-black channel buffers
     buffers: dict[str, list[tuple[int, int, int]]] = {
@@ -36,8 +34,7 @@ def _build_frame(
             continue
 
         pixel_count = sum(r.end - r.start + 1 for r in region.ranges)
-        rng = rngs.get(effect.id, random.Random(effect.id))
-        pixels = render_effect(effect, elapsed_sec, pixel_count, rng)
+        pixels = render_effect(effect, elapsed_sec, pixel_count)
 
         # Write pixels into buffer at the region's ranges
         px_idx = 0
@@ -57,14 +54,6 @@ def _build_frame(
     }
 
 
-def _init_rngs(play: Play, cue_index: int) -> dict[str, random.Random]:
-    cue = play.cues[cue_index]
-    return {
-        effect.id: random.Random(effect.id)
-        for effect in cue.effectsByRegion.values()
-    }
-
-
 # ── Preview Session ────────────────────────────────────────────────────────────
 
 
@@ -74,18 +63,18 @@ class PreviewSession:
         self.play_id: str | None = None
         self.cue_index: int = 0
         self._task: asyncio.Task | None = None
-        self._rngs: dict[str, random.Random] = {}
         self._cue_start: float = 0.0
+        self._play: Play | None = None
 
     def status(self):
         from models import PreviewStatus
         return PreviewStatus(is_running=self.is_running, playId=self.play_id)
 
     def advance(self) -> None:
+        if self._play is None or self.cue_index >= len(self._play.cues) - 1:
+            return
         self.cue_index += 1
         self._cue_start = time.monotonic()
-        if hasattr(self, "_play") and self._play:
-            self._rngs = _init_rngs(self._play, self.cue_index)
 
     async def start(self, play: Play, channels: list[Channel], fps: int, broadcaster) -> None:
         await self.stop()
@@ -94,7 +83,6 @@ class PreviewSession:
         self.cue_index = 0
         self._play = play
         self._cue_start = time.monotonic()
-        self._rngs = _init_rngs(play, 0)
         self._task = asyncio.create_task(
             self._run(play, channels, fps, broadcaster)
         )
@@ -115,7 +103,7 @@ class PreviewSession:
             while self.is_running:
                 t0 = time.monotonic()
                 elapsed = t0 - self._cue_start
-                frame = _build_frame(play, channels, self.cue_index, elapsed, self._rngs)
+                frame = _build_frame(play, channels, self.cue_index, elapsed)
                 await broadcaster.broadcast(frame)
                 spent = time.monotonic() - t0
                 await asyncio.sleep(max(0.0, frame_interval - spent))
@@ -127,6 +115,7 @@ class PreviewSession:
         finally:
             self.is_running = False
             await broadcaster.broadcast({"type": "done"})
+            await broadcaster.close_all()
 
 
 # ── Live Session ───────────────────────────────────────────────────────────────
@@ -139,7 +128,6 @@ class LiveSession:
         self.cue_index: int = 0
         self.is_blackout: bool = False
         self._task: asyncio.Task | None = None
-        self._rngs: dict[str, random.Random] = {}
         self._cue_start: float = 0.0
         self._play: Play | None = None
         self._channels: list[Channel] = []
@@ -193,7 +181,6 @@ class LiveSession:
         self._play = play
         self._channels = channels
         self._cue_start = time.monotonic()
-        self._rngs = _init_rngs(play, 0)
         await broadcaster.broadcast(self._status_message())
         self._task = asyncio.create_task(
             self._run(play, channels, fps, broadcaster, hardware)
@@ -220,7 +207,6 @@ class LiveSession:
         self.cue_index += 1
         self.is_blackout = False
         self._cue_start = time.monotonic()
-        self._rngs = _init_rngs(self._play, self.cue_index)
         await broadcaster.broadcast(self._status_message())
 
     async def blackout(self, broadcaster) -> None:
@@ -248,12 +234,11 @@ class LiveSession:
                     if hardware:
                         hardware.all_off(channels)
                 else:
-                    frame = _build_frame(play, channels, self.cue_index, elapsed, self._rngs)
+                    frame = _build_frame(play, channels, self.cue_index, elapsed)
                     await broadcaster.broadcast(frame)
                     if hardware:
                         for ch in channels:
                             buf_hex = frame["channels"].get(ch.id, [])
-                            # Convert hex back to RGB for hardware write
                             pixels = [
                                 (int(h[1:3], 16), int(h[3:5], 16), int(h[5:7], 16))
                                 for h in buf_hex
