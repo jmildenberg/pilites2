@@ -58,13 +58,27 @@ The PiLites backend is a Python FastAPI application that provides APIs for hardw
 
 ## Getting Started
 
-1. Prepare a Raspberry Pi Zero W or Zero 2 W with a supported OS.
-2. Wire the WS281x strands to the intended PWM channel(s).
-3. Ensure the Pi has proper power and the light strands have adequate power drops.
-4. Install PiLites and configure it to run as a root systemd service (required for PWM access).
-5. Open the web UI and complete channel configuration.
-6. Define a play with named regions and an ordered list of cues, then preview effects.
-7. Switch to live mode to run the performance.
+### Quick Install (Raspberry Pi)
+
+```bash
+git clone https://github.com/your-repo/PiLites4.git
+cd PiLites4
+sudo ./install.sh --production
+```
+
+Then visit `http://<your-pi-ip>:8000` in your browser.
+
+### Setup Workflow
+
+1. Prepare a Raspberry Pi Zero W or Zero 2 W with Raspberry Pi OS
+2. Wire the WS281x strands to the intended PWM channel(s)
+3. Ensure the Pi has proper power and the light strands have adequate power drops
+4. Run the PiLites installer (handles systemd service setup)
+5. Open the web UI and complete channel configuration
+6. Define a play with named regions and an ordered list of cues, then preview effects
+7. Switch to live mode to run the performance
+
+**Full installation guide**: [Installation Instructions](docs/installation.md)
 
 ## Configuration
 

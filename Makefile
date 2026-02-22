@@ -1,4 +1,4 @@
-.PHONY: help install test lint dev clean \
+.PHONY: help install test lint dev clean package \
         backend-install backend-dev backend-test backend-lint \
         frontend-install frontend-dev frontend-build
 
@@ -25,6 +25,7 @@ help:
 	@echo "  test               Run all tests"
 	@echo "  lint               Lint backend source"
 	@echo "  clean              Remove generated files and build artifacts"
+	@echo "  package            Create distribution package (no dev artifacts)"
 	@echo ""
 	@echo "  backend-install    Create Python venv and install backend deps"
 	@echo "  backend-dev        Run backend with mock hardware"
@@ -54,6 +55,51 @@ clean:
 	find backend -name "*.pyc" -delete 2>/dev/null || true
 	rm -rf backend/.venv backend/.pytest_cache backend/htmlcov backend/.coverage
 	rm -rf frontend/node_modules frontend/dist 2>/dev/null || true
+
+# ── Package ────────────────────────────────────────────────────────────────────
+
+package:
+	@echo "Creating distribution package..."
+	@rm -rf build dist pilites-*.tar.gz
+	@mkdir -p build/pilites
+	@echo "Copying files..."
+	@# Core directories
+	@cp -r backend build/pilites/
+	@cp -r frontend build/pilites/ 2>/dev/null || true
+	@cp -r docs build/pilites/
+	@# Essential files
+	@cp install.sh build/pilites/
+	@cp .env.example build/pilites/
+	@cp readme.md build/pilites/
+	@cp Makefile build/pilites/
+	@# Clean build artifacts and development files
+	@echo "Cleaning development artifacts..."
+	@find build/pilites/backend -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	@find build/pilites/backend -name "*.pyc" -delete 2>/dev/null || true
+	@find build/pilites/backend -type d -name ".venv" -exec rm -rf {} + 2>/dev/null || true
+	@find build/pilites/backend -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find build/pilites/backend -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true
+	@find build/pilites/backend -name ".coverage" -delete 2>/dev/null || true
+	@find build/pilites/backend -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find build/pilites/frontend -type d -name "node_modules" -exec rm -rf {} + 2>/dev/null || true
+	@find build/pilites/frontend -type d -name ".next" -exec rm -rf {} + 2>/dev/null || true
+	@find build/pilites -name ".DS_Store" -delete 2>/dev/null || true
+	@# Create tarball
+	@VERSION=$$(git describe --tags --abbrev=0 2>/dev/null || echo "dev");\
+	TARBALL="pilites-$$VERSION.tar.gz";\
+	cd build && COPYFILE_DISABLE=1 tar --no-xattrs -czf "../$$TARBALL" pilites/ && cd ..;\
+	du -h "$$TARBALL" > /tmp/size.txt;\
+	SIZE=$$(cat /tmp/size.txt | awk '{print $$1}');\
+	echo "";\
+	echo "✓ Package created: $$TARBALL ($$SIZE)";\
+	echo "";\
+	echo "To install on Raspberry Pi:";\
+	echo "  tar -xzf $$TARBALL";\
+	echo "  cd pilites";\
+	echo "  sudo ./install.sh --production";\
+	echo ""
+
+
 
 # ── Backend ────────────────────────────────────────────────────────────────────
 

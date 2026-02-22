@@ -24,6 +24,7 @@ frontend/dist/
 frontend/.env
 frontend/.env.local
 frontend/.env.*.local
+*.tar.gz
 
 # macOS
 .DS_Store
