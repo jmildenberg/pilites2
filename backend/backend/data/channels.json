@@ -1,0 +1,18 @@
+[
+  {
+    "id": "channel-3d30045d-bcc9-499f-bd78-30472e04d56f",
+    "name": "Channel 0",
+    "gpioPin": 18,
+    "ledCount": 50,
+    "ledType": "WS2811",
+    "colorOrder": "RGB"
+  },
+  {
+    "id": "channel-bbd69e91-3caa-46e9-a505-76b5ebffa444",
+    "name": "Channel 1",
+    "gpioPin": 12,
+    "ledCount": 300,
+    "ledType": "WS2815",
+    "colorOrder": "GRB"
+  }
+]

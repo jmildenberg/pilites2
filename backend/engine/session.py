@@ -68,7 +68,7 @@ class PreviewSession:
 
     def status(self):
         from models import PreviewStatus
-        return PreviewStatus(is_running=self.is_running, playId=self.play_id)
+        return PreviewStatus(isRunning=self.is_running, playId=self.play_id)
 
     def advance(self) -> None:
         if self._play is None or self.cue_index >= len(self._play.cues) - 1:

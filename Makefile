@@ -1,6 +1,6 @@
 .PHONY: help install test lint dev clean \
         backend-install backend-dev backend-test backend-lint \
-        frontend-install frontend-dev
+        frontend-install frontend-dev frontend-build
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
@@ -33,6 +33,7 @@ help:
 	@echo ""
 	@echo "  frontend-install   Install frontend npm dependencies"
 	@echo "  frontend-dev       Run frontend dev server"
+	@echo "  frontend-build     Build frontend for production"
 	@echo ""
 
 # ── Top-level ──────────────────────────────────────────────────────────────────
@@ -86,4 +87,8 @@ frontend-install:
 
 frontend-dev:
 	@if [ -d frontend ]; then cd frontend && npm run dev; \
+	else echo "frontend/ not yet created — skipping"; fi
+
+frontend-build:
+	@if [ -d frontend ]; then cd frontend && npm run build; \
 	else echo "frontend/ not yet created — skipping"; fi

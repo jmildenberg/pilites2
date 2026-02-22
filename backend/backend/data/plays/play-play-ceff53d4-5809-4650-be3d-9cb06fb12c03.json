@@ -1,0 +1,57 @@
+{
+  "id": "play-ceff53d4-5809-4650-be3d-9cb06fb12c03",
+  "name": "GodSpell",
+  "regions": [
+    {
+      "id": "region-eaaf231c-86ec-44c7-8594-a3c7e71aeeee",
+      "name": "Region 1",
+      "channelId": "channel-3d30045d-bcc9-499f-bd78-30472e04d56f",
+      "ranges": [
+        {
+          "start": 0,
+          "end": 49
+        }
+      ]
+    },
+    {
+      "id": "region-788fd3d5-2662-4316-b14b-317b9e3ddf2b",
+      "name": "Region 2",
+      "channelId": "channel-bbd69e91-3caa-46e9-a505-76b5ebffa444",
+      "ranges": [
+        {
+          "start": 0,
+          "end": 49
+        }
+      ]
+    }
+  ],
+  "cues": [
+    {
+      "id": "cue-d4c75226-279b-4fe5-8b07-1d3d61bceb62",
+      "name": "Hello",
+      "effectsByRegion": {
+        "region-eaaf231c-86ec-44c7-8594-a3c7e71aeeee": {
+          "id": "effect-9213610c-a004-4701-8e97-d849d2920843",
+          "type": "twinkle",
+          "params": {
+            "color": "#0000ff",
+            "backgroundColor": "#654c15",
+            "density": 0.3,
+            "speed": 1,
+            "offsetSec": 0
+          }
+        },
+        "region-788fd3d5-2662-4316-b14b-317b9e3ddf2b": {
+          "id": "effect-23f44b3d-df1e-4554-b9f4-eb599876c524",
+          "type": "rainbow",
+          "params": {
+            "speed": 1,
+            "direction": "forward",
+            "intensity": 1,
+            "offsetSec": 0
+          }
+        }
+      }
+    }
+  ]
+}
