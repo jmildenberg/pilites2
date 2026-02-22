@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.env
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local dev data (backend/data/ used when DATA_DIR=./data)
+backend/data/
+
+# Node / React (frontend, not yet created)
+node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# macOS
+.DS_Store
+
+# Editor
+*.swp
+*~
