@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import random
-
 from engine.effects.utils import hex_to_rgb, lerp_color
 
 
@@ -9,7 +7,6 @@ def render(
     params: dict,
     elapsed_sec: float,
     pixel_count: int,
-    rng: random.Random,
 ) -> list[tuple[int, int, int]]:
     start_color = hex_to_rgb(params.get("startColor", "#ffffff"))
     end_color = hex_to_rgb(params.get("endColor", "#000000"))

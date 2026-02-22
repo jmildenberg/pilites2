@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import random
 from typing import Callable
 
 from models import Effect
 
 # Each effect module exposes a `render` function with signature:
-#   render(params, elapsed_sec, pixel_count, rng) -> list[tuple[int,int,int]]
+#   render(params, elapsed_sec, pixel_count) -> list[tuple[int,int,int]]
 
 from engine.effects import (
     chase,
@@ -41,9 +40,8 @@ def render_effect(
     effect: Effect,
     elapsed_sec: float,
     pixel_count: int,
-    rng: random.Random,
 ) -> list[tuple[int, int, int]]:
     fn = EFFECT_REGISTRY.get(effect.type)
     if fn is None:
         return [(0, 0, 0)] * pixel_count
-    return fn(effect.params, elapsed_sec, pixel_count, rng)
+    return fn(effect.params, elapsed_sec, pixel_count)

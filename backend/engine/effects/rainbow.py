@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import colorsys
-import random
 
 from engine.effects.utils import scale_color
 
@@ -10,7 +9,6 @@ def render(
     params: dict,
     elapsed_sec: float,
     pixel_count: int,
-    rng: random.Random,
 ) -> list[tuple[int, int, int]]:
     speed = float(params.get("speed", 1.0))
     direction = params.get("direction", "forward")

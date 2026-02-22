@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import random
-
 from engine.effects.utils import hex_to_rgb
 
 
@@ -9,7 +7,6 @@ def render(
     params: dict,
     elapsed_sec: float,
     pixel_count: int,
-    rng: random.Random,
 ) -> list[tuple[int, int, int]]:
     color = hex_to_rgb(params.get("color", "#ffffff"))
     rate = float(params.get("rate", 8.0))
