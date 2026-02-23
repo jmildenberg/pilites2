@@ -17,6 +17,8 @@ htmlcov/
 
 # Local dev data (backend/data/ used when DATA_DIR=./data)
 backend/data/
+# Prevent accidentally tracked nested backend directories
+backend/backend/
 
 # Node / React (frontend, not yet created)
 node_modules/

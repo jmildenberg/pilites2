@@ -61,6 +61,7 @@ class Region(BaseModel):
     name: str
     channelId: str
     ranges: list[PixelRange]
+    uiColor: str | None = None
 
     @field_validator("ranges")
     @classmethod
@@ -81,6 +82,7 @@ class Cue(BaseModel):
     id: str
     name: str
     effectsByRegion: dict[str, Effect] = {}
+    trackingRegions: list[str] = []
 
 
 class Play(BaseModel):

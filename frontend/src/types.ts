@@ -17,6 +17,7 @@ export interface Region {
   name: string
   channelId: string
   ranges: PixelRange[]
+  uiColor?: string
 }
 
 export interface Effect {
@@ -29,6 +30,7 @@ export interface Cue {
   id: string
   name: string
   effectsByRegion: Record<string, Effect>
+  trackingRegions?: string[]
 }
 
 export interface Play {

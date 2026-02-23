@@ -13,12 +13,12 @@ This matches the FastAPI default error format and applies to all non-2xx respons
 ## HTTP Status Codes
 
 | Code | When used |
-|------|-----------|
-| 400  | Bad request — the request is malformed or logically invalid (e.g., invalid file path on import). |
-| 404  | Not found — the requested resource does not exist (e.g., unknown play or channel ID). |
-| 409  | Conflict — the operation cannot proceed due to state (e.g., starting live mode when already running). |
-| 422  | Validation error — the request body fails schema validation. FastAPI returns structured detail (see below). |
-| 500  | Internal server error — an unexpected failure on the backend. |
+| ------ | ---------- |
+| 400 | Bad request — the request is malformed or logically invalid (e.g., invalid file path on import). |
+| 404 | Not found — the requested resource does not exist (e.g., unknown play or channel ID). |
+| 409 | Conflict — the operation cannot proceed due to state (e.g., starting live mode when already running). |
+| 422 | Validation error — the request body fails schema validation. FastAPI returns structured detail (see below). |
+| 500 | Internal server error — an unexpected failure on the backend. |
 
 ## Validation Errors (422)
 

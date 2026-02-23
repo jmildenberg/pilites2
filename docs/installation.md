@@ -5,17 +5,20 @@ This guide walks through installing PiLites on a Raspberry Pi for both developme
 ## Prerequisites
 
 ### Raspberry Pi Hardware
+
 - **Raspberry Pi Zero W** or **Raspberry Pi Zero 2 W** (or later models)
 - **MicroSD Card**: 8GB minimum recommended
 - **Power Supply**: Proper 5V supply for the Pi
 - **Light Strands**: WS281x-compatible LEDs (or compatible alternatives)
 
 ### Operating System
+
 - Raspberry Pi OS (Lite or Desktop) — Debian-based
 - SSH access (or keyboard/monitor for setup)
 - Internet connectivity for initial setup and package downloads
 
 ### Knowledge
+
 - Basic command-line familiarity
 - Understanding of GPIO pins 12, 13, 18, 19 on your Pi model
 
@@ -50,6 +53,7 @@ That's it! Access the UI at `http://<pi-ip>:8000`
    - Configure SSH in the imager (optional hostname, enable SSH)
 
 2. **First boot setup**:
+
    ```bash
    # SSH into the Pi
    ssh pi@raspberrypi.local
@@ -61,6 +65,7 @@ That's it! Access the UI at `http://<pi-ip>:8000`
    ```
 
 3. **File System Expansion** (if needed):
+
    ```bash
    sudo raspi-config
    # Navigate to: Advanced Options → Expand Filesystem
@@ -147,7 +152,7 @@ The `install.sh` script automates:
 
 Once installation completes and the service starts:
 
-```
+``` http
 http://<your-pi-ip>:8000
 ```
 
@@ -225,7 +230,7 @@ sudo systemctl restart pilites
 ### Key Options
 
 | Setting | Default | Notes |
-|---------|---------|-------|
+| --------- | --------- | ------- |
 | `MOCK_HARDWARE` | `false` | Set to `true` for testing without Pi hardware |
 | `FPS_TARGET` | `30` | Frames per second (30 = ~1000 LEDs/channel, 60 = ~500 LEDs/channel) |
 | `PORT` | `8000` | API/UI port |
@@ -296,11 +301,13 @@ sudo rm -rf /var/lib/pilites
 To update an existing installation:
 
 1. **Stop the service**:
+
    ```bash
    sudo systemctl stop pilites
    ```
 
 2. **Update code**:
+
    ```bash
    cd /opt/pilites
    sudo git pull origin main  # if cloned from git
@@ -308,12 +315,14 @@ To update an existing installation:
    ```
 
 3. **Reinstall dependencies** (if requirements changed):
+
    ```bash
    cd /opt/pilites/backend
    sudo /opt/pilites/backend/venv/bin/pip install --quiet -r requirements.txt
    ```
 
 4. **Restart service**:
+
    ```bash
    sudo systemctl restart pilites
    ```

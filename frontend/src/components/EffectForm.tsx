@@ -7,6 +7,8 @@ interface EffectFormProps {
   onTypeChange: (type: string) => void
   onParamChange: (key: string, value: unknown) => void
   allowNone?: boolean
+  variant?: 'select' | 'pills'
+  showTypeSelector?: boolean
 }
 
 export function EffectForm({
@@ -15,6 +17,8 @@ export function EffectForm({
   onTypeChange,
   onParamChange,
   allowNone = false,
+  variant = 'select',
+  showTypeSelector = true,
 }: EffectFormProps) {
   const def = EFFECT_DEFS.find((d) => d.type === effectType)
 
@@ -24,15 +28,36 @@ export function EffectForm({
       return
     }
     onTypeChange(newType)
-    // Reset params to defaults for new type
     const defaults = getDefaultParams(newType)
     for (const [k, v] of Object.entries(defaults)) {
       onParamChange(k, v)
     }
   }
 
-  return (
-    <div>
+  const typeSelector =
+    variant === 'pills' ? (
+      <div className="effect-pills">
+        {allowNone && (
+          <button
+            type="button"
+            className={`pill-btn${effectType === '' ? ' active' : ''}`}
+            onClick={() => handleTypeChange('')}
+          >
+            None
+          </button>
+        )}
+        {EFFECT_DEFS.map((d) => (
+          <button
+            type="button"
+            key={d.type}
+            className={`pill-btn${effectType === d.type ? ' active' : ''}`}
+            onClick={() => handleTypeChange(d.type)}
+          >
+            {d.label}
+          </button>
+        ))}
+      </div>
+    ) : (
       <div className="form-group">
         <label className="form-label">Effect Type</label>
         <select
@@ -48,6 +73,11 @@ export function EffectForm({
           ))}
         </select>
       </div>
+    )
+
+  return (
+    <div>
+      {showTypeSelector && typeSelector}
 
       {def &&
         def.params.map((p) => {

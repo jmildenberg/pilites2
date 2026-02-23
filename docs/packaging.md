@@ -17,20 +17,24 @@ This creates `pilites-<version>.tar.gz` containing only the files needed to oper
 ## What's Included in the Package
 
 ✅ **Backend**
+
 - Python source code (`backend/`)
 - `requirements.txt` (pip dependencies)
 - All effects and routers
 - Configuration for production deployment
 
 ✅ **Frontend**
+
 - React/TypeScript UI source (if built; development sources are minimized)
 
 ✅ **Installation & Configuration**
+
 - `install.sh` — Automated installer
 - `.env.example` — Configuration template
 - `Makefile` — Build and development targets
 
 ✅ **Documentation**
+
 - Full API reference, effects catalog, WebSocket protocol
 - Installation instructions
 - Architecture and design docs
@@ -43,19 +47,23 @@ This creates `pilites-<version>.tar.gz` containing only the files needed to oper
 The packaging process strips all development artifacts to minimize size:
 
 ❌ **Development Artifacts**
+
 - `backend/.venv` — Python virtual environment (rebuilt on target)
 - `backend/__pycache__` — Python bytecode cache
 - `backend/.pytest_cache` — Test artifacts
 - `backend/.coverage` — Coverage reports
 
 ❌ **Node.js Artifacts**
+
 - `frontend/node_modules` — npm dependencies (reinstalled)
 - `frontend/.next` — Next.js build cache
 
 ❌ **Git**
+
 - `.git/` — Version control (not needed on target)
 
 ❌ **System**
+
 - `.DS_Store` — macOS metadata
 
 ---
@@ -65,6 +73,7 @@ The packaging process strips all development artifacts to minimize size:
 Standard package: **~170 KB** (compressed)
 
 When extracted on the target Pi:
+
 - Backend: ~2–3 MB (source code, no venv)
 - Frontend: varies (not included in backend-only packages)
 - Docs: ~500 KB
@@ -83,6 +92,7 @@ make package
 ```
 
 Users can then:
+
 ```bash
 wget https://github.com/your-repo/PiLites4/releases/download/v1.0.0/pilites-v1.0.0.tar.gz
 tar -xzf pilites-v1.0.0.tar.gz
@@ -165,6 +175,7 @@ package:
 ```
 
 Common additions:
+
 - Systemd units: `cp ./systemd/* build/pilites/`
 - License files: `cp LICENSE build/pilites/`
 - Changelog: `cp CHANGELOG.md build/pilites/`
@@ -261,4 +272,3 @@ tar -tzf pilites-*.tar.gz > /dev/null && echo "OK" || echo "CORRUPT"
 2. Document any Pi-specific setup (GPIO, power, wiring)
 3. Create release notes with version info
 4. Consider adding example plays or configurations to the package
-

@@ -1,223 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getChannels, getPlay, testRegion, updatePlay } from '../api'
+import { ChannelStrip, REGION_SWATCHES, getRegionColor } from '../components/ChannelStrip'
 import { EffectForm } from '../components/EffectForm'
-import { Modal } from '../components/Modal'
 import { useToast } from '../context/ToastContext'
 import { EFFECT_DEFS, getDefaultParams } from '../effects'
 import type { Channel, Cue, Effect, Play, PixelRange, Region } from '../types'
 
-// ── Region Modal ─────────────────────────────────────────────────────────────
-
-interface RegionModalProps {
-  initial: Region | null
-  channels: Channel[]
-  onClose: () => void
-  onSave: (region: Region) => void
-}
-
-function RegionModal({ initial, channels, onClose, onSave }: RegionModalProps) {
-  const { toastError } = useToast()
-  const [name, setName] = useState(initial?.name ?? '')
-  const [channelId, setChannelId] = useState(initial?.channelId ?? channels[0]?.id ?? '')
-  const [ranges, setRanges] = useState<PixelRange[]>(
-    initial?.ranges ?? [{ start: 0, end: 49 }],
-  )
-
-  function addRange() {
-    setRanges((r) => [...r, { start: 0, end: 49 }])
-  }
-
-  function removeRange(i: number) {
-    setRanges((r) => r.filter((_, idx) => idx !== i))
-  }
-
-  function updateRange(i: number, key: 'start' | 'end', value: number) {
-    setRanges((r) => r.map((pr, idx) => (idx === i ? { ...pr, [key]: value } : pr)))
-  }
-
-  function handleSave() {
-    if (!name.trim()) { toastError('Name is required.'); return }
-    if (!channelId) { toastError('Channel is required.'); return }
-    if (ranges.length === 0) { toastError('At least one range is required.'); return }
-    for (const pr of ranges) {
-      if (pr.start > pr.end) { toastError('Start must be ≤ end for all ranges.'); return }
-    }
-    onSave({
-      id: initial?.id ?? `region-${crypto.randomUUID()}`,
-      name: name.trim(),
-      channelId,
-      ranges,
-    })
-    onClose()
-  }
-
-  return (
-    <Modal
-      title={initial ? 'Edit Region' : 'Add Region'}
-      onClose={onClose}
-      footer={
-        <>
-          <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave}>Save</button>
-        </>
-      }
-    >
-      <div className="form-group">
-        <label className="form-label">Name</label>
-        <input className="form-input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-      </div>
-      <div className="form-group">
-        <label className="form-label">Channel</label>
-        <select className="form-select" value={channelId} onChange={(e) => setChannelId(e.target.value)}>
-          {channels.map((ch) => (
-            <option key={ch.id} value={ch.id}>{ch.name}</option>
-          ))}
-        </select>
-      </div>
-      <div className="form-group">
-        <label className="form-label">Pixel Ranges (0-indexed)</label>
-        {ranges.map((pr, i) => (
-          <div key={i} className="pixel-range-row">
-            <div className="form-group">
-              <label className="form-label">Start</label>
-              <input
-                type="number"
-                className="form-input"
-                min={0}
-                value={pr.start}
-                onChange={(e) => updateRange(i, 'start', parseInt(e.target.value) || 0)}
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">End</label>
-              <input
-                type="number"
-                className="form-input"
-                min={0}
-                value={pr.end}
-                onChange={(e) => updateRange(i, 'end', parseInt(e.target.value) || 0)}
-              />
-            </div>
-            <button
-              className="btn btn-sm btn-danger"
-              onClick={() => removeRange(i)}
-              disabled={ranges.length === 1}
-              style={{ alignSelf: 'flex-end', marginBottom: 0 }}
-            >
-              ×
-            </button>
-          </div>
-        ))}
-        <button className="btn btn-sm" onClick={addRange}>+ Add Range</button>
-      </div>
-    </Modal>
-  )
-}
-
-// ── Cue Modal ─────────────────────────────────────────────────────────────────
-
-interface CueModalProps {
-  initial: Cue | null
-  regions: Region[]
-  onClose: () => void
-  onSave: (cue: Cue) => void
-}
-
-function CueModal({ initial, regions, onClose, onSave }: CueModalProps) {
-  const { toastError } = useToast()
-  const [name, setName] = useState(initial?.name ?? '')
-  // Map: regionId → { type, params }
-  const [effectsByRegion, setEffectsByRegion] = useState<Record<string, { type: string; params: Record<string, unknown> }>>(() => {
-    const init: Record<string, { type: string; params: Record<string, unknown> }> = {}
-    for (const region of regions) {
-      const existing = initial?.effectsByRegion[region.id]
-      if (existing) {
-        init[region.id] = { type: existing.type, params: { ...existing.params } }
-      } else {
-        init[region.id] = { type: '', params: {} }
-      }
-    }
-    return init
-  })
-
-  function handleTypeChange(regionId: string, type: string) {
-    setEffectsByRegion((prev) => ({
-      ...prev,
-      [regionId]: { type, params: type ? getDefaultParams(type) : {} },
-    }))
-  }
-
-  function handleParamChange(regionId: string, key: string, value: unknown) {
-    setEffectsByRegion((prev) => ({
-      ...prev,
-      [regionId]: { ...prev[regionId], params: { ...prev[regionId].params, [key]: value } },
-    }))
-  }
-
-  function handleSave() {
-    if (!name.trim()) { toastError('Name is required.'); return }
-    const built: Record<string, Effect> = {}
-    for (const [regionId, ef] of Object.entries(effectsByRegion)) {
-      if (!ef.type) continue // no effect = black
-      const existing = initial?.effectsByRegion[regionId]
-      built[regionId] = {
-        id: existing?.id ?? `effect-${crypto.randomUUID()}`,
-        type: ef.type,
-        params: ef.params,
-      }
-    }
-    onSave({
-      id: initial?.id ?? `cue-${crypto.randomUUID()}`,
-      name: name.trim(),
-      effectsByRegion: built,
-    })
-    onClose()
-  }
-
-  return (
-    <Modal
-      title={initial ? 'Edit Cue' : 'Add Cue'}
-      onClose={onClose}
-      size="lg"
-      footer={
-        <>
-          <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSave}>Save</button>
-        </>
-      }
-    >
-      <div className="form-group">
-        <label className="form-label">Cue Name</label>
-        <input className="form-input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-      </div>
-      <div className="divider" />
-      {regions.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)' }}>Add regions to the play first.</p>
-      ) : (
-        regions.map((region) => {
-          const ef = effectsByRegion[region.id] ?? { type: '', params: {} }
-          return (
-            <div key={region.id} className="effect-section">
-              <div className="effect-section-header">
-                <span className="effect-section-label">{region.name}</span>
-              </div>
-              <EffectForm
-                effectType={ef.type}
-                params={ef.params}
-                onTypeChange={(t) => handleTypeChange(region.id, t)}
-                onParamChange={(k, v) => handleParamChange(region.id, k, v)}
-                allowNone
-              />
-            </div>
-          )
-        })
-      )}
-    </Modal>
-  )
-}
+const DEFAULT_RANGE: PixelRange = { start: 0, end: 49 }
 
 // ── Regions Tab ───────────────────────────────────────────────────────────────
+
+interface RegionDraft {
+  region: Region
+  isNew: boolean
+}
 
 function RegionsTab({
   play,
@@ -229,103 +26,289 @@ function RegionsTab({
   onPlayChange: (p: Play) => void
 }) {
   const { toastError, toastSuccess } = useToast()
-  const [modal, setModal] = useState<'add' | Region | null>(null)
+  const [selected, setSelected] = useState<RegionDraft | null>(null)
 
-  const channelMap = Object.fromEntries(channels.map((ch) => [ch.id, ch]))
+  function selectRegion(id: string) {
+    const region = play.regions.find((r) => r.id === id)
+    if (!region) return
+    setSelected({
+      region: { ...region, ranges: region.ranges.map((pr) => ({ ...pr })) },
+      isNew: false,
+    })
+  }
 
-  async function handleTest(region: Region) {
+  function startNew() {
+    const swatchIdx = play.regions.length % REGION_SWATCHES.length
+    setSelected({
+      region: {
+        id: `region-${crypto.randomUUID()}`,
+        name: '',
+        channelId: channels[0]?.id ?? '',
+        ranges: [{ ...DEFAULT_RANGE }],
+        uiColor: REGION_SWATCHES[swatchIdx],
+      },
+      isNew: true,
+    })
+  }
+
+  function updateDraft(update: Partial<Region>) {
+    if (!selected) return
+    setSelected({ ...selected, region: { ...selected.region, ...update } })
+  }
+
+  function updateDraftRange(i: number, key: 'start' | 'end', value: number) {
+    if (!selected) return
+    const ranges = selected.region.ranges.map((pr, idx) =>
+      idx === i ? { ...pr, [key]: value } : pr
+    )
+    updateDraft({ ranges })
+  }
+
+  function addRange() {
+    if (!selected) return
+    updateDraft({ ranges: [...selected.region.ranges, { ...DEFAULT_RANGE }] })
+  }
+
+  function removeRange(i: number) {
+    if (!selected) return
+    updateDraft({ ranges: selected.region.ranges.filter((_, idx) => idx !== i) })
+  }
+
+  function applyDraft() {
+    if (!selected) return
+    const r = selected.region
+    if (!r.name.trim()) { toastError('Name is required.'); return }
+    if (!r.channelId) { toastError('Channel is required.'); return }
+    if (r.ranges.length === 0) { toastError('At least one range is required.'); return }
+    for (const pr of r.ranges) {
+      if (pr.start > pr.end) { toastError('Start must be ≤ end for all ranges.'); return }
+    }
+    if (selected.isNew) {
+      onPlayChange({ ...play, regions: [...play.regions, r] })
+      setSelected({ ...selected, isNew: false })
+    } else {
+      onPlayChange({
+        ...play,
+        regions: play.regions.map((ex) => (ex.id === r.id ? r : ex)),
+      })
+    }
+    toastSuccess(`Region "${r.name}" ${selected.isNew ? 'added' : 'updated'}.`)
+  }
+
+  async function handleTest() {
+    if (!selected || selected.isNew) return
     try {
-      await testRegion(play.id, region.id)
-      toastSuccess(`Test signal sent to region "${region.name}".`)
+      await testRegion(play.id, selected.region.id)
+      toastSuccess(`Test signal sent to region "${selected.region.name}".`)
     } catch (e) {
       toastError(e instanceof Error ? e.message : 'Test failed.')
     }
   }
 
-  function handleDelete(region: Region) {
-    if (!confirm(`Delete region "${region.name}"?`)) return
+  function handleDelete() {
+    if (!selected || selected.isNew) return
+    if (!confirm(`Delete region "${selected.region.name}"?`)) return
     onPlayChange({
       ...play,
-      regions: play.regions.filter((r) => r.id !== region.id),
-      // Remove from all cues too
+      regions: play.regions.filter((r) => r.id !== selected.region.id),
       cues: play.cues.map((cue) => {
         const efr = { ...cue.effectsByRegion }
-        delete efr[region.id]
+        delete efr[selected.region.id]
         return { ...cue, effectsByRegion: efr }
       }),
     })
+    setSelected(null)
   }
 
-  function handleSaveRegion(region: Region) {
-    const exists = play.regions.find((r) => r.id === region.id)
-    if (exists) {
-      onPlayChange({ ...play, regions: play.regions.map((r) => (r.id === region.id ? region : r)) })
-    } else {
-      onPlayChange({ ...play, regions: [...play.regions, region] })
+  // Returns regions for a channel, substituting the draft region so the strip
+  // reflects color/range changes live as the user edits in the panel.
+  function getDisplayRegions(ch: Channel): Region[] {
+    const base = play.regions.filter(
+      (r) => r.channelId === ch.id && (!selected || r.id !== selected.region.id)
+    )
+    if (selected && selected.region.channelId === ch.id) {
+      return [...base, selected.region]
     }
+    return base
   }
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <button className="btn btn-primary btn-sm" onClick={() => setModal('add')}>
-          + Add Region
-        </button>
-      </div>
-
-      {play.regions.length === 0 ? (
-        <div className="empty-state">
-          <strong>No regions yet.</strong>
-          <p>Regions map pixel ranges on a channel to areas you can light separately.</p>
+      {channels.length > 0 && (
+        <div className="channel-strips-section">
+          {channels.map((ch) => (
+            <ChannelStrip
+              key={ch.id}
+              channel={ch}
+              regions={getDisplayRegions(ch)}
+              selectedRegionId={selected?.region.id ?? null}
+              onSelect={selectRegion}
+            />
+          ))}
         </div>
-      ) : (
-        <div className="card">
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Channel</th>
-                <th>Ranges</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {play.regions.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.name}</td>
-                  <td>{channelMap[r.channelId]?.name ?? r.channelId}</td>
-                  <td style={{ fontFamily: 'monospace', fontSize: 12 }}>
-                    {r.ranges.map((pr) => `${pr.start}–${pr.end}`).join(', ')}
-                  </td>
-                  <td>
-                    <div className="td-actions">
-                      <button className="btn btn-sm" title="Test region on hardware" onClick={() => handleTest(r)}>
-                        [T]
-                      </button>
-                      <button className="btn btn-sm" onClick={() => setModal(r)}>Edit</button>
-                      <button className="btn btn-sm btn-danger" onClick={() => handleDelete(r)}>Delete</button>
-                    </div>
-                  </td>
-                </tr>
+      )}
+
+      <div className="editor-split">
+        {/* Region List */}
+        <div className="editor-list">
+          <button className="btn btn-primary btn-sm editor-list-add" onClick={startNew}>
+            + Add Region
+          </button>
+          {play.regions.length === 0 && !selected?.isNew && (
+            <p className="editor-list-empty">No regions yet.</p>
+          )}
+          {play.regions.map((r, i) => (
+            <div
+              key={r.id}
+              className={`editor-list-item${selected?.region.id === r.id && !selected.isNew ? ' active' : ''}`}
+              style={{ borderLeftColor: getRegionColor(r, i) }}
+              onClick={() => selectRegion(r.id)}
+            >
+              <span
+                className="region-color-dot"
+                style={{ background: getRegionColor(r, i) }}
+              />
+              <span className="editor-list-item-name">{r.name || '(untitled)'}</span>
+            </div>
+          ))}
+          {selected?.isNew && (
+            <div
+              className="editor-list-item active"
+              style={{ borderLeftColor: selected.region.uiColor }}
+            >
+              <span
+                className="region-color-dot"
+                style={{ background: selected.region.uiColor }}
+              />
+              <span className="editor-list-item-name" style={{ color: 'var(--text-muted)' }}>
+                New region…
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Region Panel */}
+        {selected ? (
+          <div className="editor-panel">
+            <div className="form-group">
+              <label className="form-label">Name</label>
+              <input
+                className="form-input"
+                value={selected.region.name}
+                onChange={(e) => updateDraft({ name: e.target.value })}
+                autoFocus
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Channel</label>
+              <select
+                className="form-select"
+                value={selected.region.channelId}
+                onChange={(e) => updateDraft({ channelId: e.target.value })}
+              >
+                {channels.map((ch) => (
+                  <option key={ch.id} value={ch.id}>{ch.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Color</label>
+              <div className="swatch-grid">
+                {REGION_SWATCHES.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`swatch-btn${selected.region.uiColor === color ? ' active' : ''}`}
+                    style={{ background: color }}
+                    onClick={() => updateDraft({ uiColor: color })}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Pixel Ranges (0-indexed)</label>
+              {selected.region.ranges.map((pr, i) => (
+                <div key={i} className="pixel-range-row">
+                  <div className="form-group">
+                    <label className="form-label">Start</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      min={0}
+                      value={pr.start}
+                      onChange={(e) => updateDraftRange(i, 'start', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">End</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      min={0}
+                      value={pr.end}
+                      onChange={(e) => updateDraftRange(i, 'end', parseInt(e.target.value) || 0)}
+                    />
+                  </div>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => removeRange(i)}
+                    disabled={selected.region.ranges.length === 1}
+                    style={{ alignSelf: 'flex-end', marginBottom: 0 }}
+                  >
+                    ×
+                  </button>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              <button className="btn btn-sm" onClick={addRange}>+ Add Range</button>
+            </div>
 
-      {modal !== null && (
-        <RegionModal
-          initial={modal === 'add' ? null : modal}
-          channels={channels}
-          onClose={() => setModal(null)}
-          onSave={handleSaveRegion}
-        />
-      )}
+            <div className="editor-panel-actions">
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn btn-primary btn-sm" onClick={applyDraft}>
+                  {selected.isNew ? 'Add Region' : 'Apply Changes'}
+                </button>
+                {!selected.isNew && (
+                  <button
+                    className="btn btn-sm"
+                    onClick={handleTest}
+                    title="Send test signal to hardware"
+                  >
+                    Test [T]
+                  </button>
+                )}
+              </div>
+              {!selected.isNew && (
+                <button className="btn btn-sm btn-danger" onClick={handleDelete}>
+                  Delete Region
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="editor-panel editor-panel-empty">
+            Select a region or click + Add Region
+          </div>
+        )}
+      </div>
     </>
   )
 }
 
 // ── Cues Tab ──────────────────────────────────────────────────────────────────
+
+// Sentinel value used to represent the "Track" mode within this component only
+const TRACK_MODE = '_track'
+
+interface CueDraft {
+  cue: Cue
+  isNew: boolean
+}
+
+/** Returns the current mode for a region in the draft cue: '' (none), '_track', or effect type string. */
+function getRegionMode(cue: Cue, regionId: string): string {
+  if (cue.trackingRegions?.includes(regionId)) return TRACK_MODE
+  return cue.effectsByRegion[regionId]?.type ?? ''
+}
 
 function CuesTab({
   play,
@@ -334,20 +317,103 @@ function CuesTab({
   play: Play
   onPlayChange: (p: Play) => void
 }) {
-  const [modal, setModal] = useState<'add' | Cue | null>(null)
+  const { toastError, toastSuccess } = useToast()
+  const [selected, setSelected] = useState<CueDraft | null>(null)
 
-  function handleSaveCue(cue: Cue) {
-    const exists = play.cues.find((c) => c.id === cue.id)
-    if (exists) {
-      onPlayChange({ ...play, cues: play.cues.map((c) => (c.id === cue.id ? cue : c)) })
-    } else {
-      onPlayChange({ ...play, cues: [...play.cues, cue] })
-    }
+  const cueIndex = selected
+    ? selected.isNew
+      ? play.cues.length
+      : play.cues.findIndex((c) => c.id === selected.cue.id)
+    : -1
+
+  function selectCue(id: string) {
+    const cue = play.cues.find((c) => c.id === id)
+    if (!cue) return
+    setSelected({
+      cue: {
+        ...cue,
+        trackingRegions: [...(cue.trackingRegions ?? [])],
+        effectsByRegion: Object.fromEntries(
+          Object.entries(cue.effectsByRegion).map(([k, v]) => [
+            k,
+            { ...v, params: { ...v.params } },
+          ])
+        ),
+      },
+      isNew: false,
+    })
   }
 
-  function handleDelete(cue: Cue) {
-    if (!confirm(`Delete cue "${cue.name}"?`)) return
-    onPlayChange({ ...play, cues: play.cues.filter((c) => c.id !== cue.id) })
+  function startNew() {
+    const isFirst = play.cues.length === 0
+    setSelected({
+      cue: {
+        id: `cue-${crypto.randomUUID()}`,
+        name: '',
+        effectsByRegion: {},
+        // Default to tracking all regions unless this is the first cue
+        trackingRegions: isFirst ? [] : play.regions.map((r) => r.id),
+      },
+      isNew: true,
+    })
+  }
+
+  function setRegionMode(regionId: string, mode: string) {
+    if (!selected) return
+    const updatedEffects = { ...selected.cue.effectsByRegion }
+    const updatedTracking = (selected.cue.trackingRegions ?? []).filter((id) => id !== regionId)
+
+    if (mode === TRACK_MODE) {
+      delete updatedEffects[regionId]
+      updatedTracking.push(regionId)
+    } else if (!mode) {
+      delete updatedEffects[regionId]
+    } else {
+      const existing = updatedEffects[regionId]
+      updatedEffects[regionId] = {
+        id: existing?.id ?? `effect-${crypto.randomUUID()}`,
+        type: mode,
+        params: mode !== existing?.type ? getDefaultParams(mode) : { ...existing.params },
+      }
+    }
+
+    setSelected({
+      ...selected,
+      cue: { ...selected.cue, effectsByRegion: updatedEffects, trackingRegions: updatedTracking },
+    })
+  }
+
+  function handleParamChange(regionId: string, key: string, value: unknown) {
+    if (!selected) return
+    const existing = selected.cue.effectsByRegion[regionId]
+    if (!existing) return
+    const updatedEffects = {
+      ...selected.cue.effectsByRegion,
+      [regionId]: { ...existing, params: { ...existing.params, [key]: value } },
+    }
+    setSelected({ ...selected, cue: { ...selected.cue, effectsByRegion: updatedEffects } })
+  }
+
+  function applyDraft() {
+    if (!selected) return
+    if (!selected.cue.name.trim()) { toastError('Cue name is required.'); return }
+    if (selected.isNew) {
+      onPlayChange({ ...play, cues: [...play.cues, selected.cue] })
+      setSelected({ ...selected, isNew: false })
+    } else {
+      onPlayChange({
+        ...play,
+        cues: play.cues.map((c) => (c.id === selected.cue.id ? selected.cue : c)),
+      })
+    }
+    toastSuccess(`Cue "${selected.cue.name}" ${selected.isNew ? 'added' : 'updated'}.`)
+  }
+
+  function handleDelete() {
+    if (!selected || selected.isNew) return
+    if (!confirm(`Delete cue "${selected.cue.name}"?`)) return
+    onPlayChange({ ...play, cues: play.cues.filter((c) => c.id !== selected.cue.id) })
+    setSelected(null)
   }
 
   function moveUp(i: number) {
@@ -364,74 +430,138 @@ function CuesTab({
     onPlayChange({ ...play, cues })
   }
 
-  const regionMap = Object.fromEntries(play.regions.map((r) => [r.id, r]))
-
   return (
-    <>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <button className="btn btn-primary btn-sm" onClick={() => setModal('add')}>
+    <div className="editor-split">
+      {/* Cue List */}
+      <div className="editor-list">
+        <button className="btn btn-primary btn-sm editor-list-add" onClick={startNew}>
           + Add Cue
         </button>
+        {play.cues.length === 0 && !selected?.isNew && (
+          <p className="editor-list-empty">No cues yet.</p>
+        )}
+        {play.cues.map((cue, i) => (
+          <div
+            key={cue.id}
+            className={`editor-list-item cue-list-item${selected?.cue.id === cue.id && !selected.isNew ? ' active' : ''}`}
+          >
+            <span className="cue-number">{i + 1}</span>
+            <button className="cue-list-name" onClick={() => selectCue(cue.id)}>
+              {cue.name || '(untitled)'}
+            </button>
+            <div className="cue-list-actions">
+              <button className="btn btn-sm" onClick={() => moveUp(i)} disabled={i === 0}>↑</button>
+              <button className="btn btn-sm" onClick={() => moveDown(i)} disabled={i >= play.cues.length - 1}>↓</button>
+            </div>
+          </div>
+        ))}
+        {selected?.isNew && (
+          <div className="editor-list-item active cue-list-item">
+            <span className="cue-number">{play.cues.length + 1}</span>
+            <span className="cue-list-name" style={{ color: 'var(--text-muted)' }}>
+              New cue…
+            </span>
+          </div>
+        )}
       </div>
 
-      {play.cues.length === 0 ? (
-        <div className="empty-state">
-          <strong>No cues yet.</strong>
-          <p>Cues define the lighting effects for each region at a point in the show.</p>
+      {/* Cue Panel */}
+      {selected ? (
+        <div className="editor-panel">
+          <div className="form-group">
+            <label className="form-label">Cue Name</label>
+            <input
+              className="form-input"
+              value={selected.cue.name}
+              onChange={(e) =>
+                setSelected({ ...selected, cue: { ...selected.cue, name: e.target.value } })
+              }
+              autoFocus
+            />
+          </div>
+
+          {play.regions.length === 0 ? (
+            <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>
+              Add regions to the play first.
+            </p>
+          ) : (
+            play.regions.map((region, i) => {
+              const mode = getRegionMode(selected.cue, region.id)
+              const effect: Effect | undefined = selected.cue.effectsByRegion[region.id]
+              return (
+                <div key={region.id} className="region-effect-card">
+                  <div className="region-effect-header">
+                    <span
+                      className="region-color-dot"
+                      style={{ background: getRegionColor(region, i) }}
+                    />
+                    <span className="region-effect-name">{region.name}</span>
+                  </div>
+
+                  {/* Mode pills: None | Track (not first cue) | effect types */}
+                  <div className="effect-pills">
+                    <button
+                      type="button"
+                      className={`pill-btn${mode === '' ? ' active' : ''}`}
+                      onClick={() => setRegionMode(region.id, '')}
+                    >
+                      None
+                    </button>
+                    {cueIndex > 0 && (
+                      <button
+                        type="button"
+                        className={`pill-btn pill-btn-track${mode === TRACK_MODE ? ' active' : ''}`}
+                        onClick={() => setRegionMode(region.id, TRACK_MODE)}
+                      >
+                        Track ↑
+                      </button>
+                    )}
+                    {EFFECT_DEFS.map((d) => (
+                      <button
+                        type="button"
+                        key={d.type}
+                        className={`pill-btn${mode === d.type ? ' active' : ''}`}
+                        onClick={() => setRegionMode(region.id, d.type)}
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Tracking hint or effect params */}
+                  {mode === TRACK_MODE ? (
+                    <p className="track-hint">↑ Continues effect from the previous cue</p>
+                  ) : effect ? (
+                    <EffectForm
+                      effectType={effect.type}
+                      params={effect.params}
+                      onTypeChange={() => {}}
+                      onParamChange={(k, v) => handleParamChange(region.id, k, v)}
+                      showTypeSelector={false}
+                    />
+                  ) : null}
+                </div>
+              )
+            })
+          )}
+
+          <div className="editor-panel-actions">
+            <button className="btn btn-primary btn-sm" onClick={applyDraft}>
+              {selected.isNew ? 'Add Cue' : 'Apply Changes'}
+            </button>
+            {!selected.isNew && (
+              <button className="btn btn-sm btn-danger" onClick={handleDelete}>
+                Delete Cue
+              </button>
+            )}
+          </div>
         </div>
       ) : (
-        <div className="card">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Effects</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {play.cues.map((cue, i) => {
-                const effectList = Object.entries(cue.effectsByRegion)
-                  .map(([rid, ef]) => {
-                    const region = regionMap[rid]
-                    const label = EFFECT_DEFS.find((d) => d.type === ef.type)?.label ?? ef.type
-                    return `${region?.name ?? rid}: ${label}`
-                  })
-                  .join(' · ')
-
-                return (
-                  <tr key={cue.id}>
-                    <td style={{ color: 'var(--text-muted)', width: 40 }}>{i + 1}</td>
-                    <td>{cue.name}</td>
-                    <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      {effectList || '—'}
-                    </td>
-                    <td>
-                      <div className="td-actions">
-                        <button className="btn btn-sm" onClick={() => moveUp(i)} disabled={i === 0}>↑</button>
-                        <button className="btn btn-sm" onClick={() => moveDown(i)} disabled={i >= play.cues.length - 1}>↓</button>
-                        <button className="btn btn-sm" onClick={() => setModal(cue)}>Edit</button>
-                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(cue)}>Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+        <div className="editor-panel editor-panel-empty">
+          Select a cue or click + Add Cue
         </div>
       )}
-
-      {modal !== null && (
-        <CueModal
-          initial={modal === 'add' ? null : modal}
-          regions={play.regions}
-          onClose={() => setModal(null)}
-          onSave={handleSaveCue}
-        />
-      )}
-    </>
+    </div>
   )
 }
 

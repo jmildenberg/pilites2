@@ -587,3 +587,307 @@ tr:hover td {
   color: var(--text-muted);
   font-weight: 400;
 }
+
+/* ── Channel Strip ───────────────────────────────────────────────────────── */
+
+.channel-strips-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.channel-strip-wrap {
+  margin-bottom: 14px;
+}
+
+.channel-strip-wrap:last-child {
+  margin-bottom: 0;
+}
+
+.channel-strip-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.channel-strip-bar {
+  display: flex;
+  height: 32px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+}
+
+.strip-segment {
+  height: 100%;
+}
+
+.strip-segment-region {
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.12s;
+}
+
+.strip-segment-region:hover {
+  opacity: 1;
+}
+
+.strip-segment-selected {
+  opacity: 1 !important;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.75);
+}
+
+.channel-strip-ruler {
+  position: relative;
+  height: 18px;
+  margin-top: 3px;
+}
+
+.ruler-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+/* ── Editor Split Layout ─────────────────────────────────────────────────── */
+
+.editor-split {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  min-height: 360px;
+}
+
+.editor-list {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.editor-list-add {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+.editor-list-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 8px 4px;
+  text-align: center;
+}
+
+.editor-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  border-left: 3px solid transparent;
+  background: none;
+  cursor: pointer;
+  transition: background 0.1s, opacity 0.1s;
+  text-align: left;
+  width: 100%;
+  color: var(--text);
+  font-size: 13px;
+  opacity: 0.65;
+}
+
+.editor-list-item:hover {
+  background: var(--surface2);
+  opacity: 1;
+}
+
+.editor-list-item.active {
+  background: var(--surface2);
+  padding-left: 7px;
+  opacity: 1;
+}
+
+.editor-list-item-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-panel {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.editor-panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  min-height: 200px;
+}
+
+.editor-panel-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Region Color Dot & Swatches ─────────────────────────────────────────── */
+
+.region-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.swatch-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.swatch-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.swatch-btn:hover {
+  transform: scale(1.15);
+}
+
+.swatch-btn.active {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+/* ── Cue List Items ──────────────────────────────────────────────────────── */
+
+.cue-list-item {
+  cursor: default;
+}
+
+.cue-number {
+  font-size: 11px;
+  color: var(--text-muted);
+  width: 20px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.cue-list-name {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cue-list-name:hover {
+  color: var(--accent);
+}
+
+.cue-list-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ── Effect Pills ────────────────────────────────────────────────────────── */
+
+.effect-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+.pill-btn {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface3);
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.pill-btn:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.pill-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #111;
+}
+
+.pill-btn-track {
+  border-style: dashed;
+}
+
+.pill-btn-track.active {
+  background: var(--success);
+  border-color: var(--success);
+  border-style: solid;
+  color: #fff;
+}
+
+.track-hint {
+  font-size: 12px;
+  color: var(--success);
+  font-style: italic;
+  padding: 4px 0 2px;
+}
+
+/* ── Region Effect Cards ─────────────────────────────────────────────────── */
+
+.region-effect-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 10px;
+  background: var(--bg);
+}
+
+.region-effect-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.region-effect-name {
+  font-size: 13px;
+  font-weight: 500;
+}

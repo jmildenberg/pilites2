@@ -37,7 +37,7 @@ MOCK_HARDWARE=true DATA_DIR=./data uvicorn main:app --reload --port 8000
 ### Environment Variables
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| ---------- | --------- | ------------- |
 | `DATA_DIR` | `/var/lib/pilites` | Base directory for stored data. |
 | `MOCK_HARDWARE` | `false` | Set to `true` to skip hardware output. |
 | `HARDWARE_TEST_TIMEOUT_SEC` | `30` | Seconds before a hardware test signal auto-clears. |

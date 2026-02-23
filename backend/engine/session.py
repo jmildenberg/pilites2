@@ -11,6 +11,15 @@ from engine.effects.utils import rgb_to_hex
 logger = logging.getLogger(__name__)
 
 
+def _resolve_effect(play: Play, from_cue_index: int, region_id: str):
+    """Walk backwards from from_cue_index to find the most recently owned effect."""
+    for i in range(from_cue_index, -1, -1):
+        cue = play.cues[i]
+        if region_id not in cue.trackingRegions:
+            return cue.effectsByRegion.get(region_id)
+    return None
+
+
 def _build_frame(
     play: Play,
     channels: list[Channel],
@@ -25,7 +34,22 @@ def _build_frame(
     cue = play.cues[cue_index]
     region_map = {r.id: r for r in play.regions}
 
-    for region_id, effect in cue.effectsByRegion.items():
+    # Process both owned effects and tracking regions
+    all_region_ids = set(cue.effectsByRegion.keys()) | set(cue.trackingRegions)
+
+    for region_id in all_region_ids:
+        # Resolve which effect to render
+        if region_id in cue.trackingRegions:
+            if cue_index == 0:
+                continue  # first cue has nothing to track → black
+            effect = _resolve_effect(play, cue_index - 1, region_id)
+            if effect is None:
+                continue  # chain resolved to black
+        else:
+            effect = cue.effectsByRegion.get(region_id)
+            if effect is None:
+                continue
+
         region = region_map.get(region_id)
         if region is None:
             continue

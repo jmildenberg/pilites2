@@ -1,6 +1,6 @@
 .PHONY: help install test lint dev clean package \
         backend-install backend-dev backend-test backend-lint \
-        frontend-install frontend-dev frontend-build
+        frontend-install frontend-dev frontend-build frontend-test frontend-lint
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
@@ -10,7 +10,7 @@ PIP           := $(abspath $(VENV)/bin/pip)
 PYTEST        := $(abspath $(VENV)/bin/pytest)
 UVICORN       := $(abspath $(VENV)/bin/uvicorn)
 
-DATA_DIR      ?= ./backend/data
+DATA_DIR      ?= ./data
 PORT          ?= 8000
 FPS_TARGET    ?= 30
 
@@ -23,7 +23,7 @@ help:
 	@echo "  install            Install backend and frontend dependencies"
 	@echo "  dev                Run backend (mock hardware) + frontend dev server"
 	@echo "  test               Run all tests"
-	@echo "  lint               Lint backend source"
+	@echo "  lint               Lint backend and frontend source"
 	@echo "  clean              Remove generated files and build artifacts"
 	@echo "  package            Create distribution package (no dev artifacts)"
 	@echo ""
@@ -35,15 +35,14 @@ help:
 	@echo "  frontend-install   Install frontend npm dependencies"
 	@echo "  frontend-dev       Run frontend dev server"
 	@echo "  frontend-build     Build frontend for production"
-	@echo ""
-
-# ── Top-level ──────────────────────────────────────────────────────────────────
+	@echo "  frontend-test      Run frontend test suite"
+	@echo "  frontend-lint      Lint frontend source"
 
 install: backend-install frontend-install
 
-test: backend-test
+test: backend-test frontend-test
 
-lint: backend-lint
+lint: backend-lint frontend-lint
 
 dev:
 	@echo "Starting backend and frontend..."
@@ -137,4 +136,11 @@ frontend-dev:
 
 frontend-build:
 	@if [ -d frontend ]; then cd frontend && npm run build; \
+	else echo "frontend/ not yet created — skipping"; fi
+
+frontend-test:
+	@if [ -d frontend ]; then cd frontend && npm run test:run; \
+	else echo "frontend/ not yet created — skipping"; fi
+frontend-lint:
+	@if [ -d frontend ]; then cd frontend && npm run lint; \
 	else echo "frontend/ not yet created — skipping"; fi

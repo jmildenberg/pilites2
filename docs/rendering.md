@@ -94,7 +94,7 @@ The channel buffer is written to the hardware strip after color order conversion
 ## Configuration
 
 | Setting | Default | Description |
-|---------|---------|-------------|
+| --------- | --------- | ------------- |
 | `FPS_TARGET` | `30` | Target frames per second. |
 | `MOCK_HARDWARE` | `false` | Skip hardware output when `true`. |
 | `DATA_DIR` | `/var/lib/pilites` | Base path for stored data. |
