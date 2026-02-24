@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createPlay, deletePlay, listPlays } from '../api'
+import { createPlay, deletePlay, listPlays, randomUUID } from '../api'
 import { Modal } from '../components/Modal'
 import { useToast } from '../context/ToastContext'
 import type { PlaySummary } from '../types'
@@ -17,7 +17,7 @@ function NewPlayModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     }
     setSaving(true)
     try {
-      const id = `play-${crypto.randomUUID()}`
+      const id = `play-${randomUUID()}`
       await createPlay({ id, name: name.trim(), regions: [], cues: [] })
       onCreated(id)
       onClose()

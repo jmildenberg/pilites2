@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getChannels, testChannelOff, testChannelWhite, upsertChannel } from '../api'
+import { getChannels, randomUUID, testChannelOff, testChannelWhite, upsertChannel } from '../api'
 import { Modal } from '../components/Modal'
 import { useToast } from '../context/ToastContext'
 import type { Channel } from '../types'
@@ -41,7 +41,7 @@ function ChannelModal({ initial, onClose, onSaved }: ChannelModalProps) {
     }
     setSaving(true)
     try {
-      const id = initial?.id ?? `channel-${crypto.randomUUID()}`
+      const id = initial?.id ?? `channel-${randomUUID()}`
       await upsertChannel({ id, ...form })
       toastSuccess(initial ? 'Channel updated.' : 'Channel created.')
       onSaved()

@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 class TestListChannels:
     def test_returns_channels(self, client: TestClient) -> None:
-        resp = client.get("/channels")
+        resp = client.get("/api/channels")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 1
@@ -11,7 +11,7 @@ class TestListChannels:
 
     def test_empty_returns_list(self, client: TestClient) -> None:
         client.app.state.storage.save_channels([])
-        resp = client.get("/channels")
+        resp = client.get("/api/channels")
         assert resp.status_code == 200
         assert resp.json() == []
 
@@ -26,10 +26,10 @@ class TestUpsertChannel:
             "ledType": "ws281x",
             "colorOrder": "GRB",
         }
-        resp = client.post("/channels", json=payload)
+        resp = client.post("/api/channels", json=payload)
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
-        channels = client.get("/channels").json()
+        channels = client.get("/api/channels").json()
         ids = {c["id"] for c in channels}
         assert "ch-2" in ids
 
@@ -42,9 +42,9 @@ class TestUpsertChannel:
             "ledType": "ws281x",
             "colorOrder": "RGB",
         }
-        resp = client.post("/channels", json=payload)
+        resp = client.post("/api/channels", json=payload)
         assert resp.status_code == 200
-        channels = client.get("/channels").json()
+        channels = client.get("/api/channels").json()
         ch1 = next(c for c in channels if c["id"] == "ch-1")
         assert ch1["name"] == "Updated"
         assert ch1["ledCount"] == 50
@@ -58,7 +58,7 @@ class TestUpsertChannel:
             "ledType": "ws281x",
             "colorOrder": "RGB",
         }
-        resp = client.post("/channels", json=payload)
+        resp = client.post("/api/channels", json=payload)
         assert resp.status_code == 422
 
     def test_invalid_color_order_returns_422(self, client: TestClient) -> None:
@@ -70,24 +70,24 @@ class TestUpsertChannel:
             "ledType": "ws281x",
             "colorOrder": "BGR",
         }
-        resp = client.post("/channels", json=payload)
+        resp = client.post("/api/channels", json=payload)
         assert resp.status_code == 422
 
 
 class TestHardwareTest:
     def test_test_white_ok(self, client: TestClient) -> None:
-        resp = client.post("/channels/ch-1/test/white")
+        resp = client.post("/api/channels/ch-1/test/white")
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
 
     def test_test_off_ok(self, client: TestClient) -> None:
-        resp = client.post("/channels/ch-1/test/off")
+        resp = client.post("/api/channels/ch-1/test/off")
         assert resp.status_code == 200
 
     def test_test_white_unknown_channel_returns_404(self, client: TestClient) -> None:
-        resp = client.post("/channels/ghost/test/white")
+        resp = client.post("/api/channels/ghost/test/white")
         assert resp.status_code == 404
 
     def test_test_off_unknown_channel_returns_404(self, client: TestClient) -> None:
-        resp = client.post("/channels/ghost/test/off")
+        resp = client.post("/api/channels/ghost/test/off")
         assert resp.status_code == 404

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import pathlib
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from config import settings
 from engine.hardware import create_hardware
@@ -48,13 +51,23 @@ app.add_middleware(
 
 from routers import channels, plays, preview, live, data  # noqa: E402
 
-app.include_router(channels.router)
-app.include_router(plays.router)
-app.include_router(preview.router)
-app.include_router(live.router)
-app.include_router(data.router)
+app.include_router(channels.router, prefix="/api")
+app.include_router(plays.router, prefix="/api")
+app.include_router(preview.router, prefix="/api")
+app.include_router(live.router, prefix="/api")
+app.include_router(data.router, prefix="/api")
+
+_DIST = pathlib.Path(__file__).parent.parent / "frontend" / "dist"
+
+if _DIST.is_dir():
+    app.mount("/assets", StaticFiles(directory=_DIST / "assets"), name="assets")
 
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/{full_path:path}")
+def spa_fallback(full_path: str):
+    return FileResponse(_DIST / "index.html")

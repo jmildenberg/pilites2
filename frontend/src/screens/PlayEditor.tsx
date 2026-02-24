@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getChannels, getPlay, testRegion, updatePlay } from '../api'
+import { getChannels, getPlay, randomUUID, testRegion, updatePlay } from '../api'
 import { ChannelStrip, REGION_SWATCHES, getRegionColor } from '../components/ChannelStrip'
 import { EffectForm } from '../components/EffectForm'
 import { useToast } from '../context/ToastContext'
@@ -41,7 +41,7 @@ function RegionsTab({
     const swatchIdx = play.regions.length % REGION_SWATCHES.length
     setSelected({
       region: {
-        id: `region-${crypto.randomUUID()}`,
+        id: `region-${randomUUID()}`,
         name: '',
         channelId: channels[0]?.id ?? '',
         ranges: [{ ...DEFAULT_RANGE }],
@@ -348,7 +348,7 @@ function CuesTab({
     const isFirst = play.cues.length === 0
     setSelected({
       cue: {
-        id: `cue-${crypto.randomUUID()}`,
+        id: `cue-${randomUUID()}`,
         name: '',
         effectsByRegion: {},
         // Default to tracking all regions unless this is the first cue
@@ -371,7 +371,7 @@ function CuesTab({
     } else {
       const existing = updatedEffects[regionId]
       updatedEffects[regionId] = {
-        id: existing?.id ?? `effect-${crypto.randomUUID()}`,
+        id: existing?.id ?? `effect-${randomUUID()}`,
         type: mode,
         params: mode !== existing?.type ? getDefaultParams(mode) : { ...existing.params },
       }
